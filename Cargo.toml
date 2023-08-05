@@ -3,6 +3,26 @@ name = "picoio-rs"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+# [target.thumbv6m-none-eabi]
+# runner = "probe-run --chip RP2040"
+# Default is to copy the generated file on the USB mass storage. Loot at
+# .cargo/config.
 
 [dependencies]
+cortex-m = "0.7.7"
+cortex-m-rt = "0.7.3"
+embedded-hal = { version = "0.2.7", features = ["unproven"] }
+
+defmt = "0.3"
+defmt-rtt = "0.4"
+panic-halt = "0.2.0"
+
+# We're using a Pico by default on this template
+rp-pico = "0.7.0"
+
+# but you can use any BSP. Uncomment this to use the pro_micro_rp2040 BSP instead
+# sparkfun-pro-micro-rp2040 = "0.6"
+
+# If you're not going to use a Board Support Package you'll need these:
+# rp2040-hal = { version="0.8", features=["rt", "critical-section-impl"] }
+# rp2040-boot2 = "0.2
