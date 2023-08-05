@@ -5,8 +5,8 @@
 #![no_main]
 
 use bsp::entry;
-use defmt::*;
-use defmt_rtt as _;
+// use defmt::*;
+// use defmt_rtt as _;
 use embedded_hal::digital::v2::OutputPin;
 use panic_halt as _;
 
@@ -22,9 +22,27 @@ use bsp::hal::{
     watchdog::Watchdog,
 };
 
+// USB Device support
+use usb_device::{class_prelude::*, prelude::*};
+
+// USB Communications Class Device support
+use usbd_serial::{SerialPort, USB_CLASS_CDC};
+
+
+fn write_serial(ser: &mut SerialPort<bsp::hal::usb::UsbBus>, string: &str)  {
+    match ser.write(string.as_bytes()) {
+        Ok(_count) => {
+            // count bytes were written
+        },
+        Err(UsbError::WouldBlock) => (),  // No data could be written (buffers full)
+        Err(_err) => (),  // An error occurred
+    };
+}
+
+
 #[entry]
 fn main() -> ! {
-    info!("Program start");
+    // info!("Program start");
     let mut pac = pac::Peripherals::take().unwrap();
     let core = pac::CorePeripherals::take().unwrap();
     let mut watchdog = Watchdog::new(pac.WATCHDOG);
@@ -53,6 +71,25 @@ fn main() -> ! {
         &mut pac.RESETS,
     );
 
+    let usb_bus = UsbBusAllocator::new(bsp::hal::usb::UsbBus::new(
+        pac.USBCTRL_REGS,
+        pac.USBCTRL_DPRAM,
+        clocks.usb_clock,
+        true,
+        &mut pac.RESETS,
+    ));
+
+    // Set up the USB Communications Class Device driver
+    let mut serial = SerialPort::new(&usb_bus);
+
+    // Create a USB device with a fake VID and PID
+    let mut usb_dev = UsbDeviceBuilder::new(&usb_bus, UsbVidPid(0x16c0, 0x27dd))
+        .manufacturer("Fake company")
+        .product("Serial port")
+        .serial_number("TEST")
+        .device_class(USB_CLASS_CDC) // from: https://www.usb.org/defined-class-codes
+        .build();
+
     // This is the correct pin on the Raspberry Pico board. On other boards, even if they have an
     // on-board LED, it might need to be changed.
     // Notably, on the Pico W, the LED is not connected to any of the RP2040 GPIOs but to the cyw43 module instead. If you have
@@ -61,12 +98,29 @@ fn main() -> ! {
     let mut led_pin = pins.led.into_push_pull_output();
 
     loop {
-        info!("on!");
         led_pin.set_high().unwrap();
-        delay.delay_ms(500);
-        info!("off!");
+        write_serial(&mut serial, "on!\n");
+        let mut counter = 0;
+        loop {
+            usb_dev.poll(&mut [&mut serial]);
+            delay.delay_ms(10);
+            counter += 1;
+            if counter == 50 {
+                break;
+            }
+        }
+
         led_pin.set_low().unwrap();
-        delay.delay_ms(500);
+        write_serial(&mut serial, "off!\n");
+        let mut counter = 0;
+        loop {
+            usb_dev.poll(&mut [&mut serial]);
+            delay.delay_ms(10);
+            counter += 1;
+            if counter == 50 {
+                break;
+            }
+        }
     }
 }
 
