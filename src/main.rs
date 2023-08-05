@@ -4,22 +4,22 @@
 #![no_std]
 #![no_main]
 
-use bsp::entry;
 // use defmt::*;
 // use defmt_rtt as _;
 use embedded_hal::digital::v2::OutputPin;
 use panic_halt as _;
 
-// Provide an alias for our BSP so we can switch targets quickly.
-// Uncomment the BSP you included in Cargo.toml, the rest of the code does not need to change.
 use rp_pico as bsp;
-// use sparkfun_pro_micro_rp2040 as bsp;
-
-use bsp::hal::{
-    clocks::{init_clocks_and_plls, Clock},
-    pac,
-    sio::Sio,
-    watchdog::Watchdog,
+use bsp::{
+    entry,
+    hal::{
+        clocks::{init_clocks_and_plls, Clock},
+        pac,
+        sio::Sio,
+        watchdog::Watchdog,
+        usb::UsbBus,
+    },
+    Pins,
 };
 
 // USB Device support
@@ -29,20 +29,19 @@ use usb_device::{class_prelude::*, prelude::*};
 use usbd_serial::{SerialPort, USB_CLASS_CDC};
 
 
-fn write_serial(ser: &mut SerialPort<bsp::hal::usb::UsbBus>, string: &str)  {
+fn write_serial(ser: &mut SerialPort<UsbBus>, string: &str)  {
     match ser.write(string.as_bytes()) {
         Ok(_count) => {
             // count bytes were written
         },
-        Err(UsbError::WouldBlock) => (),  // No data could be written (buffers full)
-        Err(_err) => (),  // An error occurred
+        Err(UsbError::WouldBlock) => {},  // No data could be written (buffers full)
+        Err(_err) => {},  // An error occurred
     };
 }
 
 
 #[entry]
 fn main() -> ! {
-    // info!("Program start");
     let mut pac = pac::Peripherals::take().unwrap();
     let core = pac::CorePeripherals::take().unwrap();
     let mut watchdog = Watchdog::new(pac.WATCHDOG);
@@ -64,14 +63,14 @@ fn main() -> ! {
 
     let mut delay = cortex_m::delay::Delay::new(core.SYST, clocks.system_clock.freq().to_Hz());
 
-    let pins = bsp::Pins::new(
+    let pins = Pins::new(
         pac.IO_BANK0,
         pac.PADS_BANK0,
         sio.gpio_bank0,
         &mut pac.RESETS,
     );
 
-    let usb_bus = UsbBusAllocator::new(bsp::hal::usb::UsbBus::new(
+    let usb_bus = UsbBusAllocator::new(UsbBus::new(
         pac.USBCTRL_REGS,
         pac.USBCTRL_DPRAM,
         clocks.usb_clock,

@@ -20,9 +20,6 @@ panic-halt = "0.2.0"
 # We're using a Pico by default on this template
 rp-pico = "0.7.0"
 
-# but you can use any BSP. Uncomment this to use the pro_micro_rp2040 BSP instead
-# sparkfun-pro-micro-rp2040 = "0.6"
-
 # If you're not going to use a Board Support Package you'll need these:
 # rp2040-hal = { version="0.8", features=["rt", "critical-section-impl"] }
 # rp2040-boot2 = "0.2
