@@ -13,8 +13,6 @@ cortex-m = "0.7.7"
 cortex-m-rt = "0.7.3"
 embedded-hal = { version = "0.2.7", features = ["unproven"] }
 
-defmt = "0.3"
-defmt-rtt = "0.4"
 panic-halt = "0.2.0"
 
 # We're using a Pico by default on this template
@@ -27,3 +25,6 @@ rp-pico = "0.7.0"
 usb-device = "0.2.9"
 usbd-serial = "0.1.1"
 usbd-hid = "0.6.1"
+
+crc = "3.0.1"
+format_no_std = "1.0.0"
